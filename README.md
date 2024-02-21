@@ -10,3 +10,14 @@ A simple matching engine with FIX acceptor written in Python
 
 * Support FIX 4.2
 * Price-time priority matching for LIMIT orders
+
+## TODOs
+
+* [] Support MARKET orders
+* [] Support LMM matching
+* [] Support other FIX versions
+
+## References
+
+* [QuickFIX Go examples](https://github.com/quickfixgo/examples)
+* [QuickFIX Python samples](https://github.com/rinleit/quickfix-python-samples)
