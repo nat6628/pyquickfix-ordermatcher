@@ -14,11 +14,11 @@ _logger = logging.getLogger(__name__)
 
 
 class Application(qf.Application):
-    def __init__(self):
+    def __init__(self, node_id: int):
         super().__init__()
 
         self.order_matcher = OrderMatcher()
-        self.gen_execID = gen_execID()
+        self.gen_execID = gen_execID(node_id)
 
         # Setup message router
         self.router = MessageRouter()

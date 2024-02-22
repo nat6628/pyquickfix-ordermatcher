@@ -14,7 +14,7 @@ class Order:
     price: decimal.Decimal
     quantity: decimal.Decimal
     executedQuantity = decimal.Decimal(0)
-    avgPx = decimal.Decimal(0)  # TODO: calculate avgPrice
+    avgPx = decimal.Decimal(0)
     insertTime: datetime = None
     lastExecutedQuantity = decimal.Decimal(0)
     lastExecutedPrice = decimal.Decimal(0)
@@ -27,9 +27,11 @@ class Order:
         )
 
     def execute(self, price: decimal.Decimal, quantity: decimal.Decimal):
+        executed_value = self.avgPx * self.executedQuantity
         self.executedQuantity += quantity
         self.lastExecutedPrice = price
         self.lastExecutedQuantity = quantity
+        self.avgPx = (executed_value + price * quantity) / (self.executedQuantity)
 
     def cancel(self):
         self._open_quantity = decimal.Decimal(0)

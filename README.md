@@ -13,9 +13,9 @@ A simple matching engine with FIX acceptor written in Python
 
 ## TODOs
 
-* [] Support MARKET orders
-* [] Support LMM matching
-* [] Support other FIX versions
+* [ ] Support MARKET orders
+* [ ] Support LMM matching
+* [ ] Support other FIX versions
 
 ## References
 

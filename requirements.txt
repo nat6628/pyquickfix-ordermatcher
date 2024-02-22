@@ -1,2 +1,6 @@
+importlib-metadata==7.0.1
+isort==5.13.2
 PyYAML==6.0.1
 quickfix==1.15.1
+snowflake-id==0.0.5
+zipp==3.17.0

@@ -23,7 +23,7 @@ class Market:
             order = self.Asks.pop(clOrdId)
         if side == qf.Side_BUY:
             order = self.Bids.pop(clOrdId)
-        print(order)
+
         if order:
             order.cancel()
             return order

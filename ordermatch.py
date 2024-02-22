@@ -10,10 +10,10 @@ import yaml
 from ordermatch import Application
 
 
-def main(config_file: str):
+def main(fix_config: str, node_id: int):
     try:
-        settings = qf.SessionSettings(config_file)
-        application = Application()
+        settings = qf.SessionSettings(fix_config)
+        application = Application(node_id)
         storefactory = qf.FileStoreFactory(settings)
         logfactory = qf.FileLogFactory(settings)
         acceptor = qf.SocketAcceptor(application, storefactory, settings, logfactory)
@@ -47,4 +47,4 @@ if __name__ == "__main__":
     os.makedirs(logs_dir, exist_ok=True)
     dictConfig(logging_config)
 
-    main(args.fix_config)
+    main(args.fix_config, settings.get("snowflake_node_id"))

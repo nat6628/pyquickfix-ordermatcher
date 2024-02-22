@@ -1,7 +1,9 @@
 import decimal
 
 import quickfix as qf
+from snowflake import SnowflakeGenerator
 
+CUSTOM_SNOWFLAKE_EPOCH = 1420070400000  # Custom Epoch (January 1, 2015 Midnight UTC = 2015-01-01T00:00:00Z)
 __SOH__ = chr(1)
 SOH = "|"
 
@@ -11,15 +13,12 @@ def get_field_value(field_map: qf.FieldMap, field: qf.FieldBase) -> str:
     return field.getValue()
 
 
-def gen_execID():
-    """Generate execID
-    TODO: snowflake-id"""
-    execID = 0
+def gen_execID(node_id: int):
+    """Generate execID"""
+    snowflake = SnowflakeGenerator(node_id, epoch=CUSTOM_SNOWFLAKE_EPOCH)
 
     def _gen_execID():
-        nonlocal execID
-        execID += 1
-        return str(execID).zfill(5)
+        return str(next(snowflake))
 
     return _gen_execID
 
