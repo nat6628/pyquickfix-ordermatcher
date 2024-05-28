@@ -53,3 +53,10 @@ class Market:
                 self.Bids.remove(best_bid)
 
         return matched
+    
+    def find(self, clOrdId: str, side: str) -> Order:
+        if side == qf.Side_SELL:
+            order = self.Asks.pop(clOrdId)
+        if side == qf.Side_BUY:
+            order = self.Bids.pop(clOrdId)
+        return order
