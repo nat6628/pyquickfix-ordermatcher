@@ -36,6 +36,9 @@ class Order:
     def cancel(self):
         self._open_quantity = decimal.Decimal(0)
 
+    def side_mapping(side):
+        return {"1": "BUY", "2": "SELL"}.get(str(side), side)
+
     @property
     def openQuantity(self):
         if self._open_quantity is None:

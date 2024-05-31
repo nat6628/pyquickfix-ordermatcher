@@ -95,6 +95,14 @@ class Application(qf.Application):
         order = self.order_matcher.cancel(origClOrdID, symbol, side)
         if order:
             self.execution_report(order, qf.OrdStatus_CANCELED, sessionID)
+        else:
+            reject_message = qf.Message()
+            reject_message.getHeader().setField(qf.MsgType(qf.MsgType_OrderCancelReject))
+            reject_message.setField(qf.OrigClOrdID(origClOrdID))
+            reject_message.setField(qf.ClOrdID(origClOrdID))
+            reject_message.setField(qf.OrdStatus(qf.OrdStatus_REJECTED))
+            reject_message.setField(qf.Text("Order not found"))
+            qf.Session.sendToTarget(reject_message, sessionID)
             
     def onOrderCancelReplaceRequest(self, message: qf.Message, sessionID: qf.SessionID):
         origClOrdID = get_field_value(message, qf.OrigClOrdID())
