@@ -12,16 +12,18 @@ class Database:
         connection.commit()
         connection.close()
 
-    def fetchone(self):
+    def fetchone(self, sql, params=()):
         connection = sqlite3.connect(self.db_name)
         cursor = connection.cursor()
+        cursor.execute(sql, params)
         row = cursor.fetchone()
         connection.close()
         return row
     
-    def fetchall(self):
+    def fetchall(self, sql, params=()):
         connection = sqlite3.connect(self.db_name)
         cursor = connection.cursor()
+        cursor.execute(sql, params)
         rows = cursor.fetchall()
         connection.close()
         return rows
@@ -89,8 +91,7 @@ class Database:
 
     def select_order_pending_order(self, clOrdID):
         sql = "SELECT * FROM pending_order WHERE clOrdID = ?;"
-        self.execute(sql, (clOrdID,))
-        row = self.fetchone()
+        row = self.fetchone(sql, (clOrdID,))
         return row
 
     def delete_order_pending_order(self, clOrdID):

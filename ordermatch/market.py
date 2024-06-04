@@ -5,6 +5,7 @@ import quickfix as qf
 from .sqlite import Database
 from .order import Order
 from .orderlist import OrderList
+from .validation import SymbolValidate
 
 db = Database("database.db")
 
@@ -57,6 +58,7 @@ class Market:
 
             best_ask.execute(exec_price, exec_volume)
             matched.append(best_ask)
+            SymbolValidate.update_symbol(best_ask.symbol, best_ask)
             if best_ask.is_closed:
                 self.Asks.remove(best_ask)
                 db.delete_order_pending_order(best_ask.clOrdID)
@@ -67,6 +69,7 @@ class Market:
             
             best_bid.execute(exec_price, exec_volume)
             matched.append(best_bid)
+            SymbolValidate.update_symbol(best_bid.symbol, best_bid)
             if best_bid.is_closed:
                 self.Bids.remove(best_bid)
                 db.delete_order_pending_order(best_bid.clOrdID)
