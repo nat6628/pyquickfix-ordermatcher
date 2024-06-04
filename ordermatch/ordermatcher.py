@@ -8,14 +8,14 @@ class OrderMatcher:
 
     def __init__(self) -> None:
         self.markets = {}
-        SymbolValidate()
+        self.symbol_validate = SymbolValidate()
 
     def insert(self, order: Order):
         market = self.markets.get(order.symbol)
         if not market:
             market = Market()
             self.markets[order.symbol] = market
-        if SymbolValidate.validate(order):
+        if self.symbol_validate.validate(order):
             market.insert(order)
 
     def cancel(self, clOrdId: str, symbol: str, side: str):
