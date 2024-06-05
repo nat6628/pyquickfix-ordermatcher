@@ -113,7 +113,7 @@ class Application(qf.Application):
         orderQty = get_field_value(message, qf.OrderQty())
         ordType = get_field_value(message, qf.OrdType())
 
-        original_order = self.order_matcher.find(origClOrdID, symbol, side)
+        original_order = self.order_matcher.find(origClOrdID, symbol)
         
         if not original_order:
         # Order not found then reject
@@ -126,7 +126,7 @@ class Application(qf.Application):
             qf.Session.sendToTarget(reject_message, sessionID)
             return
 
-        self.order_matcher.cancel(origClOrdID, symbol, side)
+        self.order_matcher.cancel(origClOrdID, symbol, original_order.side)
         self.execution_report(original_order, qf.OrdStatus_CANCELED, sessionID)
 
         # Create a new order with the updated details

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import quickfix as qf
+import decimal
 
 from .sqlite import Database
 from .order import Order
@@ -30,12 +31,44 @@ class Market:
         if side == qf.Side_SELL:
             order = self.Asks.pop(clOrdId)
             if not order:
-                order = Order(db.select_order_pending_order(clOrdId))
+                order_data_sql = db.select_order_pending_order(clOrdId)
+                order_data = {
+                    'clOrdID': order_data_sql[0],
+                    'symbol': order_data_sql[1],
+                    'senderCompID': order_data_sql[2],
+                    'targetCompID': order_data_sql[3],
+                    'side': Order.side_mapping(order_data_sql[4]),
+                    'ordType': order_data_sql[5],
+                    'price': decimal.Decimal(order_data_sql[6]),
+                    'quantity': decimal.Decimal(order_data_sql[7]),
+                    'executedQuantity': decimal.Decimal(order_data_sql[8]),
+                    'lastExecutedQuantity': decimal.Decimal(order_data_sql[9]),
+                    'lastExecutedPrice': decimal.Decimal(order_data_sql[10]),
+                    '_open_quantity': decimal.Decimal(order_data_sql[11]),
+                    'insertTime': datetime.strptime(order_data_sql[12], '%Y-%m-%d %H:%M:%S.%f')
+                }
+                order = Order.mapping(order_data)
 
         if side == qf.Side_BUY:
             order = self.Bids.pop(clOrdId)
             if not order:
-                order = Order(db.select_order_pending_order(clOrdId))
+                order_data_sql = db.select_order_pending_order(clOrdId)
+                order_data = {
+                    'clOrdID': order_data_sql[0],
+                    'symbol': order_data_sql[1],
+                    'senderCompID': order_data_sql[2],
+                    'targetCompID': order_data_sql[3],
+                    'side': Order.side_mapping(order_data_sql[4]),
+                    'ordType': order_data_sql[5],
+                    'price': decimal.Decimal(order_data_sql[6]),
+                    'quantity': decimal.Decimal(order_data_sql[7]),
+                    'executedQuantity': decimal.Decimal(order_data_sql[8]),
+                    'lastExecutedQuantity': decimal.Decimal(order_data_sql[9]),
+                    'lastExecutedPrice': decimal.Decimal(order_data_sql[10]),
+                    '_open_quantity': decimal.Decimal(order_data_sql[11]),
+                    'insertTime': datetime.strptime(order_data_sql[12], '%Y-%m-%d %H:%M:%S.%f')
+                }
+                order = Order.mapping(order_data)
 
         if order:
             order.cancel()
@@ -81,9 +114,8 @@ class Market:
 
         return matched
     
-    def find(self, clOrdId: str, side: str) -> Order:
-        if side == qf.Side_SELL:
-            order = self.Asks.pop(clOrdId)
-        if side == qf.Side_BUY:
+    def find(self, clOrdId: str) -> Order:
+        order = self.Asks.pop(clOrdId)
+        if not order:
             order = self.Bids.pop(clOrdId)
         return order

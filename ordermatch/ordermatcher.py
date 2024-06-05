@@ -30,8 +30,8 @@ class OrderMatcher:
             return []
         return market.match()
     
-    def find(self, clOrdId: str, symbol: str, side: str):
+    def find(self, clOrdId: str, symbol: str):
         market = self.markets.get(symbol)
         if not market:
             return
-        return market.find(clOrdId, side)
+        return market.find(clOrdId)
