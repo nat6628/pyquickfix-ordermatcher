@@ -31,7 +31,7 @@ class Database:
     def create_table_pending_order(self):
         sql = """
         CREATE TABLE IF NOT EXISTS pending_order (
-            clOrdID TEXT PRIMARY KEY,
+            clOrdID TEXT,
             symbol TEXT,
             senderCompID TEXT,
             targetCompID TEXT,
@@ -61,12 +61,12 @@ class Database:
             order.targetCompID, 
             Order.side_mapping(order.side), 
             order.ordType, 
-            float(order.price), 
-            float(order.quantity), 
-            float(order.executedQuantity),
-            float(order.lastExecutedQuantity),
-            float(order.lastExecutedPrice),
-            float(order.openQuantity),
+            round(float(order.price), 2), 
+            round(float(order.quantity), 2), 
+            round(float(order.executedQuantity), 2),
+            round(float(order.lastExecutedQuantity), 2),
+            round(float(order.lastExecutedPrice), 2),
+            round(float(order.openQuantity), 2),
             order.insertTime
         )
         self.execute(sql, params)
@@ -81,10 +81,10 @@ class Database:
         WHERE clOrdID = ?;
         """
         params = (
-            float(order.executedQuantity),
-            float(order.lastExecutedQuantity),
-            float(order.lastExecutedPrice),
-            float(order.openQuantity),
+            round(float(order.executedQuantity), 2),
+            round(float(order.lastExecutedQuantity), 2),
+            round(float(order.lastExecutedPrice), 2),
+            round(float(order.openQuantity), 2),
             order.clOrdID
         )
         self.execute(sql, params)
@@ -133,12 +133,12 @@ class Database:
             Order.side_mapping(order.side), 
             order.ordType, 
             status,
-            float(order.price), 
-            float(order.quantity), 
-            float(order.executedQuantity),
-            float(order.lastExecutedQuantity),
-            float(order.lastExecutedPrice),
-            float(order.openQuantity),
+            round(float(order.price), 2), 
+            round(float(order.quantity), 2), 
+            round(float(order.executedQuantity), 2),
+            round(float(order.lastExecutedQuantity), 2),
+            round(float(order.lastExecutedPrice), 2),
+            round(float(order.openQuantity), 2),
             order.insertTime
         )
         self.execute(sql, params)

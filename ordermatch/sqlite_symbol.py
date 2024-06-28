@@ -59,13 +59,13 @@ class SymbolDatabase:
                     volume = ? 
                 WHERE symbol = ?;"""
         params = (
-            float(symbol.limitUp),
-            float(symbol.limitDown),
-            float(symbol.open),
-            float(symbol.high),
-            float(symbol.low),
-            float(symbol.lastPrice),
-            float(symbol.volume),
+            round(float(symbol.limitUp), 2),
+            round(float(symbol.limitDown), 2),
+            round(float(symbol.open), 2),
+            round(float(symbol.high), 2),
+            round(float(symbol.low), 2),
+            round(float(symbol.lastPrice), 2),
+            round(float(symbol.volume), 2),
             symbol.symbol
         )
         self.execute(sql, params)
@@ -76,9 +76,9 @@ class SymbolDatabase:
                 ) VALUES (?, ?, ?, ?);"""
         params = (
             symbol.symbol,
-            float(symbol.close),
-            float(symbol.limitUp),
-            float(symbol.limitDown)
+            round(float(symbol.close), 2),
+            round(float(symbol.limitUp), 2),
+            round(float(symbol.limitDown), 2)
         )
         self.execute(sql, params)
     

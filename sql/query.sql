@@ -1,2 +1,3 @@
-SELECT * FROM symbol WHERE symbol = 'AAL';
-drop table pending_order;
+DELETE FROM symbol WHERE 1=1;
+
+--drop table pending_order;
