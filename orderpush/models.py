@@ -7,6 +7,7 @@ _lock = threading.RLock()
 
 @dataclass
 class Order:
+    type: str
     order_id: str
     symbol_code: str
     order_price: float
@@ -14,81 +15,46 @@ class Order:
     qty: int
 
     def to_csv(self) -> str:
-        csv_attrs = [self.symbol_code, self.order_price, self.side, self.qty]
+        csv_attrs = [self.type, self.symbol_code, self.order_price, self.side, self.qty]
         return ",".join(csv_attrs)
 
     @classmethod
     def from_csv(cls, order_id: int, order_str: str) -> "Order":
-        symbol_code, order_price, side, qty = order_str.split(",")
-        return Order(str(order_id), symbol_code, float(order_price), side, int(qty))
-
-
-@dataclass
-class Band:
-    price: float
-    volume: int
-
-    def __str__(self) -> str:
-        return str(self.price) + "-" + str(self.volume)
-
+        type, symbol_code, order_price, side, qty = order_str.split(",")
+        return Order(type, str(order_id), symbol_code, float(order_price), side, int(qty))
 
 @dataclass
-class OHLC:
-    open: float
-    high: float
-    low: float
-    close: float
+class CancelOrder:
+    type: str
+    order_id: str
+    symbol_code: str
+    side: str
 
 
+    def to_csv(self) -> str:
+        csv_attrs = [self.type, self.order_id, self.symbol_code, self.side]
+        return ",".join(csv_attrs)
+    
+    @classmethod
+    def from_csv(cls, order_str: str) -> "CancelOrder":
+        type, order_id, symbol_code, side = order_str.split(",")
+        return CancelOrder(type, str(order_id), symbol_code, side.strip())
+    
 @dataclass
-class Quote:
-    symbol: str
-    bids: List[Band]
-    asks: List[Band]
-    ohlc: OHLC
-    trade_price: float
-    trade_size: float
-    total_trade_volume: float
+class ModifyOrder:
+    type: str
+    orgin_order_id: str
+    symbol_code: str
+    order_price: float
+    side: str
+    qty: int
+    order_id: str
+
+    def to_csv(self) -> str:
+        csv_attrs = [self.type, self.orgin_order_id, self.symbol_code, self.order_price, self.side, self.qty]
+        return ",".join(csv_attrs)
 
     @classmethod
-    def create_blank(cls, symbol: str):
-        return cls(symbol, [], [], OHLC(0, 0, 0, 0), 0, 0, 0)
-
-    def update(self, updating_quote: "Quote"):
-        with _lock:
-            for key, value in asdict(updating_quote).items():
-                if not value:
-                    continue
-                elif key == "ohlc":
-                    if not any(value.values()):
-                        continue
-                    setattr(self, key, OHLC(**value))
-                elif key == "trade_size":
-                    setattr(self, "total_trade_volume", self.total_trade_volume + value)
-                elif key in ("bids", "asks"):
-                    setattr(
-                        self,
-                        key,
-                        [
-                            Band(v.get("price"), int(v.get("volume")))
-                            for v in value
-                            if v.get("price")
-                        ],
-                    )
-                else:
-                    setattr(self, key, value)
-
-    def __str__(self) -> str:
-        return (
-            f"symbol={self.symbol}, last_price={self.trade_price}, "
-            f"total_trade_volume={self.total_trade_volume}, "
-            f"ohlc=[{':'.join(str(price) for price in asdict(self.ohlc).values())}], "
-            f"bids=[{'|'.join(str(band) for band in self.bids)}], "
-            f"asks=[{'|'.join(str(band) for band in self.asks)}]"
-        )
-
-
-@dataclass
-class Symbol:
-    symbol_code: str
-    last_price: float
+    def from_csv(cls, order_id: int, order_str: str) -> "ModifyOrder":
+        type, orgin_order_id, symbol_code, order_price, side, qty = order_str.split(",")
+        return ModifyOrder(type, str(orgin_order_id), symbol_code, float(order_price), side, int(qty), str(order_id).strip())

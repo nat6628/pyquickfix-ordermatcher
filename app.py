@@ -3,8 +3,9 @@ import sqlite3
 
 import pandas as pd
 import streamlit as st
+import time
 
-from orderpush.models import Order
+from orderpush.models import Order, CancelOrder, ModifyOrder
 
 st.title("Market")
 
@@ -76,7 +77,7 @@ def get_pending_orders():
 def get_order_history():
     conn = sqlite3.connect("database.db")
     data = pd.read_sql_query(
-        "SELECT clOrdID, symbol, side, ordType, price, quantity, executedQuantity, lastExecutedQuantity, lastExecutedPrice FROM order_history",
+        "SELECT clOrdID, symbol, side, ordType, price, quantity, executedQuantity, lastExecutedQuantity, lastExecutedPrice, status FROM order_history",
         conn,
     )
     data = data.rename(
@@ -90,6 +91,7 @@ def get_order_history():
             "executedQuantity": "Executed Quantity",
             "lastExecutedQuantity": "Last Executed Quantity",
             "lastExecutedPrice": "Last Executed Price",
+            "status": "Status",
         }
     )
     mumeric_cols = [
@@ -112,6 +114,13 @@ def find_symbol(symbol):
     conn.close()
     return row
 
+def find_order(clOrdID):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM pending_order WHERE clOrdID = ?", (clOrdID,))
+    row = cursor.fetchone()
+    conn.close()
+    return row
 
 def is_number(n):
     try:
@@ -123,19 +132,6 @@ def is_number(n):
 
 def main(file: io.TextIOWrapper):
     clOrdID = 1
-    # Start the Python script and create a pipe to communicate with it
-    # process = subprocess.Popen(['python', 'ordermatch.py', 'ordermatch.cfg', 'settings.yaml'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-    # Display the script's output
-    # while True:
-    #     output = process.stdout.readline().decode('utf-8')
-    #     if output == '' and process.poll() is not None:
-    #         break
-    #     print(output.strip())
-    #     if '35=8' in output.strip() and '39=0' in output.strip():
-    #         success_message = st.sidebar.empty()
-    #         success_message.success('New order successfully placed!')
-    #         time.sleep(5)
-    #         success_message.empty()
 
     page = st.sidebar.selectbox("Choose a page", ["Home", "Orders"])
     if page == "Home":
@@ -162,12 +158,14 @@ def main(file: io.TextIOWrapper):
                 else:
                     side_number = '1' if side == "BUY" else '2' if side == "SELL" else 0
                     print(side)
-                    order = Order(str(clOrdID), symbol, price, side_number, quantity)
+                    order = Order('NEW', str(clOrdID), symbol, price, side_number, quantity)
                     print(order)
                     file.write(order.to_csv() + "\n")
                     file.flush()
-                    # application.sendNewOrderSingle(order)
-                    # Increment the ClOrdID for next order
+                    success_message = st.sidebar.empty()
+                    success_message.success('New order successfully placed!')
+                    time.sleep(5)
+                    success_message.empty()
                     clOrdID += 1
 
     elif page == "Orders":
@@ -179,6 +177,11 @@ def main(file: io.TextIOWrapper):
             st.table(df)
             action = st.sidebar.selectbox("Action", ["Cancel", "Modify"])
             if action == "Modify":
+                if 'order_modified' in st.session_state and st.session_state.order_modified:
+                    success_message = st.sidebar.empty()
+                    success_message.success('Order successfully modified!')
+                    del st.session_state.order_modified
+
                 with st.sidebar.form(key="modify_form"):
                     symbols = df["Symbol"].tolist()
                     order_ids = df["Order ID"].tolist()
@@ -190,17 +193,36 @@ def main(file: io.TextIOWrapper):
                     if not order_ids:  # If the list is empty, disable the form
                         st.warning("No pending orders available to modify.")
                         st.stop()
-                    order_id = df.loc[df["Order ID"] == selected_order_id].index[0]
                     new_symbol = st.selectbox("New symbol", symbols)
                     new_side = st.selectbox("New side", ["BUY", "SELL"])
-                    new_type = st.selectbox("New type", ["MARKET", "LIMIT"])
-                    new_price = st.number_input("New price")
-                    new_quantity = st.number_input("New quantity")
+                    new_price = st.text_input("New price")
+                    new_quantity = st.text_input("New quantity")
+                    new_symbol_data = find_symbol(new_symbol)
                     if st.form_submit_button("Submit"):
-                        st.write(
-                            f"Order {order_id} has been modified to {new_symbol}, {new_side}, {new_type}, {new_price}, {new_quantity}"
-                        )
+                        if new_symbol == "" or new_side == "" or new_price == "" or new_quantity == "":
+                            st.error("Error: All fields must be filled in.")
+                        elif not is_number(price) or not is_number(quantity):
+                            st.error("Error: Price and Quantity must be numbers.")
+                        elif new_symbol_data is None:
+                            st.error("Error: Symbol not found.")
+                        elif new_symbol_data[2] < float(price) or new_symbol_data[3] > float(price):
+                            st.error("Error: Price is out of range.")
+                        else:
+                            order_data = find_order(selected_order_id)
+                            side_number = '1' if new_side == "BUY" else '2' if new_side == "SELL" else '0'
+                            modify_order = ModifyOrder('MODIFY', str(selected_order_id), new_symbol, new_price, side_number, new_quantity, '0')
+                            print(modify_order)
+                            file.write(modify_order.to_csv() + "\n")
+                            file.flush()
+                            st.session_state.order_modified = True
+                            st.experimental_rerun()
+
             if action == "Cancel":
+                if 'order_canceled' in st.session_state and st.session_state.order_canceled:
+                    success_message = st.sidebar.empty()
+                    success_message.success('Order successfully canceled!')
+                    del st.session_state.order_canceled
+
                 with st.sidebar.form(key="order_form"):
                     order_ids = df["Order ID"].tolist()
                     selected_order_id = st.selectbox(
@@ -208,12 +230,21 @@ def main(file: io.TextIOWrapper):
                         order_ids,
                         format_func=lambda x: x if x else "No orders available",
                     )
-                    if not order_ids:  # If the list is empty, disable the form
+                    if not order_ids:  # If the list is empty, show warning and stop
                         st.warning("No pending orders available to cancel.")
                         st.stop()
-                    order_id = df.loc[df["Order ID"] == selected_order_id].index[0]
+
+                    # The rest of your form and logic here
                     if st.form_submit_button("Submit"):
-                        st.write(f"Order {order_id} has been canceled.")
+                        order_data = find_order(selected_order_id)
+                        print(order_data[4])
+                        side_number = '1' if order_data[4] == "BUY" else '2' if order_data[4] == "SELL" else '0'
+                        cancel_order = CancelOrder('CANCEL', str(order_data[0]), order_data[1], side_number)
+                        print(cancel_order)
+                        file.write(cancel_order.to_csv() + "\n")
+                        file.flush()
+                        st.session_state.order_canceled = True
+                        st.experimental_rerun()
 
         elif order_page == "Order History":
             df = pd.DataFrame(get_order_history())
@@ -221,14 +252,5 @@ def main(file: io.TextIOWrapper):
 
 
 if __name__ == "__main__":
-    # configs = Configs(sys.argv[1])
-
-    # id_generator = generate_id(configs.snowflake_node_id)
-    # application = FixApplication(id_generator)
-    # settings = qf.SessionSettings(configs.fix_config)
-    # storefactory = qf.FileStoreFactory(settings)
-    # logfactory = qf.FileLogFactory(settings)
-    # initiator = qf.SocketInitiator(application, storefactory, settings, logfactory)
-    # initiator.start()
     with open("order.csv", "a+") as f:
         main(f)

@@ -6,8 +6,6 @@ import quickfix as qf
 import yaml
 from snowflake import SnowflakeGenerator
 
-from .models import Symbol
-
 _CUSTOM_SNOWFLAKE_EPOCH = 1420070400000  # Custom Epch (January 1, 2015 Midnight UTC = 2015-01-01T00:00:00Z)
 
 
@@ -53,9 +51,3 @@ def now() -> str:
 def get_field_value(field_map: qf.FieldMap, field: qf.FieldBase) -> str:
     field_map.getField(field)
     return field.getValue()
-
-
-def get_symbol_list(path: str) -> List[Symbol]:
-    with open(path) as f:
-        reader = csv.DictReader(f)
-        return [Symbol(**row) for row in reader]
