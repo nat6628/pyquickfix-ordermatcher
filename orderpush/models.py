@@ -13,6 +13,15 @@ class Order:
     side: str
     qty: int
 
+    def to_csv(self) -> str:
+        csv_attrs = [self.symbol_code, self.order_price, self.side, self.qty]
+        return ",".join(csv_attrs)
+
+    @classmethod
+    def from_csv(cls, order_id: int, order_str: str) -> "Order":
+        symbol_code, order_price, side, qty = order_str.split(",")
+        return Order(str(order_id), symbol_code, float(order_price), side, int(qty))
+
 
 @dataclass
 class Band:
@@ -57,7 +66,15 @@ class Quote:
                 elif key == "trade_size":
                     setattr(self, "total_trade_volume", self.total_trade_volume + value)
                 elif key in ("bids", "asks"):
-                    setattr(self, key, [Band(v.get("price"), int(v.get("volume"))) for v in value if v.get("price")])
+                    setattr(
+                        self,
+                        key,
+                        [
+                            Band(v.get("price"), int(v.get("volume")))
+                            for v in value
+                            if v.get("price")
+                        ],
+                    )
                 else:
                     setattr(self, key, value)
 

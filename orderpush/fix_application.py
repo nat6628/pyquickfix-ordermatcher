@@ -1,12 +1,16 @@
+import os
+import time
+
 import quickfix as qf
 import quickfix42 as qf42
 
-from .models import Band, Order, Quote
+from .models import Order
 from .utils import now
 
 __SOH__ = chr(1)
 MDREQID = "TRADE_SIMULATION"
 MARKETDEPTH_FULLBOOK = 0
+SLEEP_TIME = 0.01
 
 
 class FixApplication(qf.Application):
@@ -14,14 +18,14 @@ class FixApplication(qf.Application):
         super().__init__()
 
         self.gen_execID = node_id
-    
+
     def onCreate(self, sessionID):
-        # print("onCreate : Session (%s)" % sessionID.toString())
+        print("onCreate : Session (%s)" % sessionID.toString())
         return
 
     def onLogon(self, sessionID):
         self.sessionID = sessionID
-        # print("Successful Logon to session '%s'." % sessionID.toString())
+        print("Successful Logon to session '%s'." % sessionID.toString())
         return
 
     def onLogout(self, sessionID):
@@ -59,7 +63,11 @@ class FixApplication(qf.Application):
             message.setField(qf.Price(order.order_price))
             message.setField(qf.OrderQty(order.qty))
             message.setField(qf.OrdType(qf.OrdType_LIMIT))
-            message.setField(qf.HandlInst(qf.HandlInst_AUTOMATED_EXECUTION_ORDER_PRIVATE_NO_BROKER_INTERVENTION))
+            message.setField(
+                qf.HandlInst(
+                    qf.HandlInst_AUTOMATED_EXECUTION_ORDER_PRIVATE_NO_BROKER_INTERVENTION
+                )
+            )
             message.setField(qf.TimeInForce(qf.TimeInForce_GOOD_TILL_CANCEL))
 
             trstime = qf.TransactTime()
@@ -67,5 +75,20 @@ class FixApplication(qf.Application):
             message.setField(trstime)
 
             qf.Session.sendToTarget(message, self.sessionID)
-        
-    
+
+    def run(self):
+        """Keep mainThread running"""
+
+        clOrderId = 1
+
+        with open("order.csv", "r") as file:
+            file.seek(0, os.SEEK_END)
+
+            while True:
+                line = file.readline()
+                if not line:
+                    time.sleep(SLEEP_TIME)
+                    continue
+                order = Order.from_csv(clOrderId, line)
+                print(order)
+                clOrderId += 1
