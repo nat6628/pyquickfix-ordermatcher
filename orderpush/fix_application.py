@@ -92,3 +92,5 @@ class FixApplication(qf.Application):
                 order = Order.from_csv(clOrderId, line)
                 print(order)
                 clOrderId += 1
+                if order:
+                    self.sendNewOrderSingle(order)

@@ -160,8 +160,9 @@ def main(file: io.TextIOWrapper):
                 elif symbol_data[2] < float(price) or symbol_data[3] > float(price):
                     st.error("Error: Price is out of range.")
                 else:
+                    side_number = '1' if side == "BUY" else '2' if side == "SELL" else 0
                     print(side)
-                    order = Order(str(clOrdID), symbol, price, side, quantity)
+                    order = Order(str(clOrdID), symbol, price, side_number, quantity)
                     print(order)
                     file.write(order.to_csv() + "\n")
                     file.flush()
