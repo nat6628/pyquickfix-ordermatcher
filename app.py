@@ -4,7 +4,12 @@ import sqlite3
 import subprocess
 import time
 import quickfix as qf
+import sys
+import logging
 
+from orderpush.fix_application import FixApplication
+from orderpush.utils import Configs, generate_id
+from orderpush.models import Order
 st.title('Market')
 
 def get_data_symbol():
@@ -88,15 +93,10 @@ def app():
                 elif symbol_data[2] < float(price) or symbol_data[3] > float(price):
                     st.error('Error: Price is out of range.')
                 else:
-                    side_code = '1' if side == 'BUY' else '2'
-                    print(side_code)
-                    order = {
-                        "order_id": str(clOrdID),  
-                        "side": side_code,  
-                        "symbol_code": symbol,
-                        "order_price": price,
-                        "qty": quantity
-                    }
+                    print(side)
+                    order = Order(str(clOrdID), symbol, price, side, quantity)
+                    print(order)
+                    application.sendNewOrderSingle(order)
                     # Increment the ClOrdID for next order
                     clOrdID += 1
                     
@@ -141,4 +141,13 @@ def app():
             st.table(df)
 
 if __name__ == "__main__":
+    configs = Configs(sys.argv[1])
+
+    id_generator = generate_id(configs.snowflake_node_id)
+    application = FixApplication(id_generator)
+    settings = qf.SessionSettings(configs.fix_config)
+    storefactory = qf.FileStoreFactory(settings)
+    logfactory = qf.FileLogFactory(settings)
+    initiator = qf.SocketInitiator(application, storefactory, settings, logfactory)
+    initiator.start()
     app()
