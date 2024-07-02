@@ -3,7 +3,7 @@ import logging
 import time
 
 import quickfix as qf
-from quickfix42 import NewOrderSingle, OrderCancelRequest
+from quickfix42 import NewOrderSingle, OrderCancelRequest, OrderCancelReplaceRequest
 
 from .order import Order
 from .ordermatcher import OrderMatcher
@@ -24,6 +24,7 @@ class Application(qf.Application):
         self.router = MessageRouter()
         self.router.add_route(NewOrderSingle, self.onNewOrderSingle)
         self.router.add_route(OrderCancelRequest, self.onOrderCancelRequest)
+        self.router.add_route(OrderCancelReplaceRequest, self.onOrderCancelReplaceRequest)
 
     def onCreate(self, sessionID):
         _logger.debug("onCreate : Session (%s)" % sessionID.toString())
@@ -94,6 +95,62 @@ class Application(qf.Application):
         order = self.order_matcher.cancel(origClOrdID, symbol, side)
         if order:
             self.execution_report(order, qf.OrdStatus_CANCELED, sessionID)
+        else:
+            reject_message = qf.Message()
+            reject_message.getHeader().setField(qf.MsgType(qf.MsgType_OrderCancelReject))
+            reject_message.setField(qf.OrigClOrdID(origClOrdID))
+            reject_message.setField(qf.ClOrdID(origClOrdID))
+            reject_message.setField(qf.OrdStatus(qf.OrdStatus_REJECTED))
+            reject_message.setField(qf.Text("Order not found"))
+            qf.Session.sendToTarget(reject_message, sessionID)
+            
+    def onOrderCancelReplaceRequest(self, message: qf.Message, sessionID: qf.SessionID):
+        origClOrdID = get_field_value(message, qf.OrigClOrdID())
+        clOrdID = get_field_value(message, qf.ClOrdID())
+        symbol = get_field_value(message, qf.Symbol())
+        side = get_field_value(message, qf.Side())
+        price = get_field_value(message, qf.Price())
+        orderQty = get_field_value(message, qf.OrderQty())
+        ordType = get_field_value(message, qf.OrdType())
+
+        original_order = self.order_matcher.find(origClOrdID, symbol)
+        
+        if not original_order:
+        # Order not found then reject
+            reject_message = qf.Message()
+            reject_message.getHeader().setField(qf.MsgType(qf.MsgType_OrderCancelReject))
+            reject_message.setField(qf.OrigClOrdID(origClOrdID))
+            reject_message.setField(qf.ClOrdID(clOrdID))
+            reject_message.setField(qf.OrdStatus(qf.OrdStatus_REJECTED))
+            reject_message.setField(qf.Text("Order not found"))
+            qf.Session.sendToTarget(reject_message, sessionID)
+            return
+
+        self.order_matcher.cancel(origClOrdID, symbol, original_order.side)
+        self.execution_report(original_order, qf.OrdStatus_CANCELED, sessionID)
+
+        # Create a new order with the updated details
+        new_order = Order(
+            clOrdID=clOrdID,
+            symbol=symbol,
+            side=side,
+            ordType=ordType,
+            price=decimal.Decimal(str(price)),
+            quantity=decimal.Decimal(str(orderQty)),
+            senderCompID=original_order.senderCompID,
+            targetCompID=original_order.targetCompID,
+        )
+
+        # Insert the new order and send a report
+        self.order_matcher.insert(new_order)
+        self.execution_report(new_order, qf.OrdStatus_NEW, sessionID)
+
+        # Try to match the new order
+        matched = self.order_matcher.match(new_order.symbol)
+        if matched:
+            for new_order in matched:
+                updated_status = qf.OrdStatus_FILLED if new_order.is_closed else qf.OrdStatus_PARTIALLY_FILLED
+                self.execution_report(new_order, updated_status, sessionID)
 
     def execution_report(self, order: Order, ordStatus: str, sessionID: qf.SessionID):
         execReport = qf.Message()

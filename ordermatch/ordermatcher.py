@@ -1,5 +1,6 @@
 from .market import Market
 from .order import Order
+from .validation import SymbolValidate
 
 
 class OrderMatcher:
@@ -7,13 +8,15 @@ class OrderMatcher:
 
     def __init__(self) -> None:
         self.markets = {}
+        self.symbol_validate = SymbolValidate()
 
     def insert(self, order: Order):
         market = self.markets.get(order.symbol)
         if not market:
             market = Market()
             self.markets[order.symbol] = market
-        market.insert(order)
+        if self.symbol_validate.validate(order):
+            market.insert(order)
 
     def cancel(self, clOrdId: str, symbol: str, side: str):
         market = self.markets.get(symbol)
@@ -26,3 +29,9 @@ class OrderMatcher:
         if not market:
             return []
         return market.match()
+    
+    def find(self, clOrdId: str, symbol: str):
+        market = self.markets.get(symbol)
+        if not market:
+            return
+        return market.find(clOrdId)

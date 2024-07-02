@@ -36,6 +36,9 @@ class Order:
     def cancel(self):
         self._open_quantity = decimal.Decimal(0)
 
+    def side_mapping(side):
+        return {"BUY": "1", "SELL": "2", "1": "BUY", "2": "SELL"}.get(str(side).upper(), side)
+
     @property
     def openQuantity(self):
         if self._open_quantity is None:
@@ -45,3 +48,23 @@ class Order:
     @property
     def is_closed(self) -> bool:
         return self.openQuantity.is_zero()
+
+    @classmethod
+    def mapping(cls, d:dict ):
+        return cls(**d)
+    
+    def __init__(self, clOrdID: str, symbol: str, senderCompID: str, targetCompID: str, side: str, ordType: str, price: decimal.Decimal, quantity: decimal.Decimal, executedQuantity = decimal.Decimal(0), avgPx = decimal.Decimal(0), insertTime: datetime = None, lastExecutedQuantity = decimal.Decimal(0), lastExecutedPrice = decimal.Decimal(0), _open_quantity: decimal.Decimal = None):
+        self.clOrdID = clOrdID
+        self.symbol = symbol
+        self.senderCompID = senderCompID
+        self.targetCompID = targetCompID
+        self.side = side
+        self.ordType = ordType
+        self.price = price
+        self.quantity = quantity
+        self.executedQuantity = executedQuantity
+        self.avgPx = avgPx
+        self.insertTime = insertTime
+        self.lastExecutedQuantity = lastExecutedQuantity
+        self.lastExecutedPrice = lastExecutedPrice
+        self._open_quantity = _open_quantity

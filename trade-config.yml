@@ -1,0 +1,9 @@
+snowflake_node_id: 10
+timeout: 5
+delay: 10.
+
+account_id: 0
+rate_percentage: 5 # % - limit rate percentage
+
+fix_config: ./orderpush.cfg
+log_path: ./logs/trade_simulation.log
