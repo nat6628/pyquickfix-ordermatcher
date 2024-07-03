@@ -114,7 +114,8 @@ class Database:
             lastExecutedQuantity REAL DEFAULT 0,
             lastExecutedPrice REAL DEFAULT 0,
             openQuantity REAL DEFAULT 0,
-            insertTime DATETIME 
+            insertTime DATETIME,
+            notify TEXT DEFAULT 'FALSE'
         );
         """
         self.execute(sql)

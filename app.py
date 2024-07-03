@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 import time
 
+from datetime import datetime, timedelta
 from orderpush.models import Order, CancelOrder, ModifyOrder
 
 st.title("Market")
@@ -105,6 +106,12 @@ def get_order_history():
     conn.close()
     return data
 
+def update_order_history(clOrdID):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE order_history SET notify = 'TRUE' WHERE clOrdID = ?", (clOrdID,))
+    conn.commit()
+    conn.close()
 
 def find_symbol(symbol):
     conn = sqlite3.connect("database.db")
@@ -129,10 +136,32 @@ def is_number(n):
     except ValueError:
         return False
 
+def find_new_order_history():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT clOrdID, status FROM order_history WHERE notify = 'FALSE'")
+    row = cursor.fetchall()
+    conn.close()
+    return row
 
 def main(file: io.TextIOWrapper):
     clOrdID = 1
-
+    new_orders = find_new_order_history()
+    print("new_orders", new_orders)
+    if new_orders:
+        print("Generate message")
+        for order in new_orders:
+            message_key = f"message_{order[0]}"
+            # Check if the message's display time is stored in session state
+            if message_key not in st.session_state:
+                st.session_state[message_key] = datetime.now()
+            success_message = st.sidebar.empty()
+            success_message.success('Your order {} has been {}'.format(order[0], order[1]))
+            update_order_history(order[0])
+            if datetime.now() - st.session_state[message_key] > timedelta(seconds=5):
+                success_message.empty()
+                del st.session_state[message_key]
+                st.rerun()
     page = st.sidebar.selectbox("Choose a page", ["Home", "Orders"])
     if page == "Home":
         df = pd.DataFrame(get_data_symbol())
@@ -164,9 +193,10 @@ def main(file: io.TextIOWrapper):
                     file.flush()
                     success_message = st.sidebar.empty()
                     success_message.success('New order successfully placed!')
-                    time.sleep(5)
+                    time.sleep(1)
                     success_message.empty()
                     clOrdID += 1
+                    st.experimental_rerun()
 
     elif page == "Orders":
         order_page = st.sidebar.selectbox(
