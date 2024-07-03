@@ -201,11 +201,11 @@ def main(file: io.TextIOWrapper):
                     if st.form_submit_button("Submit"):
                         if new_symbol == "" or new_side == "" or new_price == "" or new_quantity == "":
                             st.error("Error: All fields must be filled in.")
-                        elif not is_number(price) or not is_number(quantity):
+                        elif not is_number(new_price) or not is_number(new_quantity):
                             st.error("Error: Price and Quantity must be numbers.")
                         elif new_symbol_data is None:
                             st.error("Error: Symbol not found.")
-                        elif new_symbol_data[2] < float(price) or new_symbol_data[3] > float(price):
+                        elif new_symbol_data[2] < float(new_price) or new_symbol_data[3] > float(new_price):
                             st.error("Error: Price is out of range.")
                         else:
                             order_data = find_order(selected_order_id)

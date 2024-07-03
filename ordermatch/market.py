@@ -80,8 +80,13 @@ class Market:
         matched = []
 
         while len(self.Asks) > 0 and len(self.Bids) > 0:
+            self.Asks = sorted(self.Asks, key=lambda x: x.price)
             best_ask = self.Asks[0]
+
+            self.Bids = sorted(self.Bids, key=lambda x: x.price, reverse=True)
             best_bid = self.Bids[0]
+            print("best_ask", best_ask)
+            print("best_bid", best_bid)
             if best_ask.price > best_bid.price:
                 break
 
