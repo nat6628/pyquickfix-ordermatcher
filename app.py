@@ -1,5 +1,6 @@
 import io
 import sqlite3
+import random
 
 import pandas as pd
 import streamlit as st
@@ -144,12 +145,18 @@ def find_new_order_history():
     conn.close()
     return row
 
+def count_pending_orders():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM pending_order")
+    row = cursor.fetchone()
+    conn.close()
+    return row[0]
+
 def main(file: io.TextIOWrapper):
     clOrdID = 1
     new_orders = find_new_order_history()
-    print("new_orders", new_orders)
     if new_orders:
-        print("Generate message")
         for order in new_orders:
             message_key = f"message_{order[0]}"
             # Check if the message's display time is stored in session state
@@ -167,6 +174,22 @@ def main(file: io.TextIOWrapper):
         df = pd.DataFrame(get_data_symbol())
         st.table(df)
         with st.sidebar.form(key="my_form"):
+            # with open("order.csv", "+w") as file:
+            #     start_time = time.time()
+            #     end_time = start_time + 60
+            #     while time.time() < end_time:
+            #         new_symbol = "AAL"
+            #         new_side = "1"
+            #         new_price = round(random.uniform(13.05, 15.0), 2)
+            #         new_quantity = random.randint(1, 100)
+                    
+            #         new_orders = Order('NEW', str(1), new_symbol, str(new_price), new_side, str(new_quantity))
+            #         file.write(new_orders.to_csv() + "\n")
+            #         file.flush()
+            #     total_time = time.time() - start_time
+            #     print(f"Total Order Submitted: {count_pending_orders()}")
+            #     print(f"Total Time: {total_time}")
+            #     print(f"Transaction Per Second: {count_pending_orders() / total_time}")
             symbols = df["Symbol"].tolist()
 
             symbol = st.selectbox("Symbol", symbols)
